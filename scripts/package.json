@@ -1,0 +1,13 @@
+{
+  "name": "field-radar-import",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Import masterdata.xlsx location tags into Supabase field_radar_locations table",
+  "scripts": {
+    "import": "node import-masterdata.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "xlsx": "^0.18.5"
+  }
+}

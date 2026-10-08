@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mandiri Outbranch Command Center</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="icon" href="assets/icon_website/favicon.png" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="min-h-screen">
+
+<!-- ================= LOGIN SCREEN ================= -->
+<div id="loginScreen" class="fixed inset-0 z-50 flex items-center justify-center overflow-hidden" style="background:var(--navy-deep);">
+  <div id="fieldhubBg" class="absolute inset-0 pointer-events-none" aria-hidden="true"></div>
+  <div class="relative z-10 bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm mx-4">
+    <div class="flex flex-col items-center mb-6 text-center">
+      <img src="assets/logo_mandiri/logo-mandiri.png" alt="Bank Mandiri" class="h-6 mb-3" onerror="this.style.display='none'" />
+      <h1 class="text-lg font-bold text-[#101828]">Outbranch Command Center</h1>
+      <p class="text-xs text-[#667085] mt-1">Silakan login dengan NIP dan password Anda</p>
+    </div>
+    <form id="loginForm" class="flex flex-col gap-3" autocomplete="on">
+      <div>
+        <label class="text-xs text-[#667085]">NIP</label>
+        <input type="text" id="loginNip" placeholder="Masukkan NIP" autocomplete="username" required />
+      </div>
+      <div>
+        <label class="text-xs text-[#667085]">Password</label>
+        <input type="password" id="loginPassword" placeholder="Masukkan password" autocomplete="current-password" required />
+      </div>
+      <p id="loginError" class="hidden text-xs text-[#DC2626]"></p>
+      <button type="submit" id="loginSubmitBtn" class="bg-[var(--navy)] text-white text-sm font-semibold py-2.5 rounded-lg mt-1">Masuk</button>
+    </form>
+  </div>
+</div>
+
+<div id="appShell" class="hidden min-h-screen flex">
+<!-- SIDEBAR -->
+<aside id="sidebar" class="w-[250px] shrink-0 text-white" style="background:linear-gradient(180deg,var(--navy) 0%, var(--navy-deep) 100%);">
+  <div class="px-6 pt-6 pb-5">
+    <div class="flex items-center gap-2">
+      <img src="assets/logo_mandiri/logo-mandiri.png" alt="Bank Mandiri" class="h-6" onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='flex';" />
+      <div id="logoFallback" style="display:none" class="items-center gap-2">
+        <svg width="26" height="18" viewBox="0 0 26 18"><path d="M0 14 L6 4 L11 12 L15 3 L21 14 L26 6" stroke="url(#g)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><defs><linearGradient id="g" x1="0" y1="0" x2="26" y2="0"><stop offset="0%" stop-color="#FCC94A"/><stop offset="100%" stop-color="#F5941E"/></linearGradient></defs></svg>
+        <span class="text-xl font-bold">mandiri</span>
+      </div>
+    </div>
+    <span class="text-xs text-[#AEB6D6]">Outbranch Command Center</span>
+  </div>
+  <nav class="px-3 flex flex-col gap-1">
+    <button class="sidebar-item active flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-left" data-page="fos">
+      <i data-lucide="radar" class="w-4 h-4"></i> Field Operation System
+    </button>
+    <button class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-left" data-page="ods">
+      <i data-lucide="credit-card" class="w-4 h-4"></i> Outbranch Delivery System
+    </button>
+    <button class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-left" data-page="umkm">
+      <i data-lucide="store" class="w-4 h-4"></i> Database UMKM
+    </button>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<div class="flex-1 min-w-0 flex flex-col">
+  <header class="bg-white px-7 py-4 flex items-center justify-between border-b border-[#EEF0F5]">
+    <button id="toggleSidebar" class="text-[#475467]"><i data-lucide="menu" class="w-5 h-5"></i></button>
+    <div class="flex items-center gap-5">
+      <span class="text-sm text-[#475467]">Hi, <span id="headerUserName">Admin</span>! <span class="text-[#D0D5DD]">|</span> KC S Parman (Area Bengkulu)</span>
+      <i data-lucide="bell" class="w-4 h-4 text-[#667085]"></i>
+      <div id="headerUserAvatar" class="w-8 h-8 rounded-full bg-[var(--navy)] text-white text-xs font-bold flex items-center justify-center">A</div>
+      <button id="logoutBtn" title="Keluar" class="text-[#98A2B3] hover:text-[#DC2626]"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+    </div>
+  </header>
+
+  <main class="p-7 flex-1">
+
+  <!-- ================= FOS ================= -->
+  <section id="page-fos">
+    <h1 class="text-xl font-bold text-[#101828] mb-1">Field Operation System</h1>
+    <p class="text-sm text-[#667085] mb-4">Lokasi: <b>KC S Parman (Area Bengkulu)</b> · Area operasional: <b>Kecamatan Ratu Agung, Kota Bengkulu</b></p>
+    <div class="flex gap-1 border-b border-[#E3E6EE] mb-5">
+      <button class="subtab active px-4 py-2 text-sm font-semibold" data-sub="radar">Field Radar</button>
+      <button class="subtab px-4 py-2 text-sm font-semibold" data-sub="route">Smart Route Optimization</button>
+    </div>
+
+    <!-- Field Radar -->
+    <div id="fos-radar">
+      <div class="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-5">
+        <div class="card p-4">
+          <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <div class="font-bold text-[#101828] flex items-center gap-2"><i data-lucide="map-pin" class="w-4 h-4"></i>Mapping Wilayah <span id="loadStatus" class="text-xs font-normal text-[#98A2B3]">(memuat database...)</span></div>
+            <button id="gpsToggleBtn" class="text-xs font-semibold border border-[#E3E6EE] rounded-lg px-3 py-1.5 flex items-center gap-1.5">
+              <i data-lucide="locate-fixed" class="w-3.5 h-3.5"></i> Ikuti Lokasi Saya
+            </button>
+          </div>
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div class="flex gap-3 text-xs">
+              <label class="flex items-center gap-1"><input type="checkbox" class="typeFilter" value="balai" checked> <span class="text-purple-700">Balai RT/RW</span></label>
+              <label class="flex items-center gap-1"><input type="checkbox" class="typeFilter" value="sekolah" checked> <span class="text-orange-700">Sekolah</span></label>
+              <label class="flex items-center gap-1"><input type="checkbox" class="typeFilter" value="umkm" checked> <span class="text-teal-700">UMKM</span></label>
+              <label class="flex items-center gap-1"><input type="checkbox" class="typeFilter" value="merchant" checked> <span class="text-blue-700">Merchant</span></label>
+            </div>
+            <select id="sourceFilter" class="!w-auto !py-1 !text-xs">
+              <option value="all">Semua sumber</option>
+              <option value="topdown">Top Down (otomatis)</option>
+              <option value="manual">Bottom Up (manual)</option>
+            </select>
+            <div class="flex gap-3 text-[11px] text-[#667085]">
+              <span><span class="status-dot status-belum"></span>Belum</span>
+              <span><span class="status-dot status-proses"></span>Proses</span>
+              <span><span class="status-dot status-sudah"></span>Sudah</span>
+            </div>
+          </div>
+          <div id="radarMap" style="height:380px;"></div>
+          <p id="gpsHint" class="text-[11px] text-[#98A2B3] mt-2">Warna isi + bentuk ikon = jenis objek, cincin luar = status kunjungan, titik kuning kecil = Bottom Up (manual); tanpa titik = Top Down (otomatis). Klik tag untuk ubah status & isi data kunjungan.</p>
+        </div>
+        <div class="flex flex-col gap-4">
+          <div class="card p-4">
+            <div class="flex items-center justify-between mb-2">
+              <div class="font-bold text-[#101828] flex items-center gap-2"><i data-lucide="crosshair" class="w-4 h-4"></i>Nearby Target</div>
+              <span id="nearbyOrigin" class="text-[10px] text-[#98A2B3]">basis: kantor</span>
+            </div>
+            <label class="text-xs text-[#667085]">Radius pencarian: <span id="radiusVal">1000</span> m</label>
+            <input type="range" min="100" max="2000" step="50" value="1000" id="radiusSlider" class="w-full">
+            <div id="nearbyList" class="mt-3 flex flex-col gap-2 max-h-56 overflow-y-auto text-sm"></div>
+          </div>
+
+          <div class="card p-4">
+            <button id="manualAddToggle" class="w-full flex items-center justify-between text-sm font-bold text-[#101828]">
+              <span class="flex items-center gap-2"><i data-lucide="plus-circle" class="w-4 h-4"></i>Tambah Lokasi Manual</span>
+              <i data-lucide="chevron-down" class="w-4 h-4"></i>
+            </button>
+            <div id="manualAddForm" class="hidden mt-3 flex flex-col gap-2 text-sm">
+              <input type="text" id="maNama" placeholder="Nama tempat" />
+              <select id="maType">
+                <option value="balai">Balai RT/RW (Posyandu)</option>
+                <option value="sekolah">Sekolah</option>
+                <option value="umkm">UMKM</option>
+                <option value="merchant">Merchant</option>
+              </select>
+              <div class="flex gap-2">
+                <input type="text" id="maLat" placeholder="Latitude" />
+                <input type="text" id="maLng" placeholder="Longitude" />
+              </div>
+              <button id="maUseGps" type="button" class="text-xs text-[var(--navy)] font-semibold text-left flex items-center gap-1"><i data-lucide="locate" class="w-3.5 h-3.5"></i>Gunakan lokasi GPS saat ini</button>
+              <textarea id="maAlamat" rows="2" placeholder="Alamat lengkap"></textarea>
+              <input type="tel" id="maTelp" placeholder="Nomor telepon (opsional)" />
+              <select id="maStatus">
+                <option value="belum">Status: Belum</option>
+                <option value="proses">Status: Proses</option>
+                <option value="sudah">Status: Sudah</option>
+              </select>
+              <button id="maSubmit" class="w-full bg-[var(--navy)] text-white text-sm font-semibold py-2.5 rounded-lg mt-1">Simpan Lokasi</button>
+              <p class="text-[11px] text-[#98A2B3]">Lokasi manual berstatus <b>Bottom Up</b> dan tersimpan ke database bersama (Supabase). Data kunjungan (PIC, tanggal, kontak, foto) diisi dari popup tag di peta.</p>
+            </div>
+          </div>
+
+          <div class="card p-4">
+            <div class="font-bold text-[#101828] mb-2 flex items-center gap-2"><i data-lucide="send" class="w-4 h-4"></i>Quick Blast</div>
+            <input type="text" id="blastSearch" placeholder="Cari nama / alamat lokasi..." class="mb-2" />
+            <div id="blastList" class="flex flex-col gap-2 max-h-48 overflow-y-auto text-sm mb-2"></div>
+            <select id="blastTemplate" class="mb-2">
+              <option value="Selamat Pagi, kami dari Bank Mandiri ingin mengundang Posyandu/Balai RT/RW untuk program edukasi keuangan gratis. Kapan waktu yang sesuai untuk kami berkunjung?">Undangan Edukasi Keuangan</option>
+              <option value="Selamat Pagi, kami dari Bank Mandiri ingin memperkenalkan program Tabungan Pelajar untuk siswa/siswi sekolah Anda. Boleh kami jadwalkan kunjungan?">Tabungan Pelajar Sekolah</option>
+              <option value="Selamat Pagi, kami dari Bank Mandiri ingin menawarkan solusi pembayaran & pengelolaan usaha (QRIS, Livin' Merchant, dan pembiayaan UMKM) untuk usaha Bapak/Ibu. Boleh kami jadwalkan kunjungan?">Penawaran Solusi UMKM</option>
+            </select>
+            <button id="quickBlastBtn" class="w-full bg-[var(--navy)] text-white text-sm font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2">
+              <i data-lucide="send" class="w-4 h-4"></i> Kirim ke target terpilih
+            </button>
+            <p class="text-[11px] text-[#98A2B3] mt-2">Cari & pilih target di seluruh database (tidak terbatas radius), lalu kirim pesan WhatsApp.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Smart Route -->
+    <div id="fos-route" class="hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-5">
+        <div class="card p-4">
+          <div class="font-bold text-[#101828] mb-3 flex items-center gap-2"><i data-lucide="route" class="w-4 h-4"></i>Rekomendasi Rute (mengikuti jalan nyata)</div>
+          <div id="routeMap" style="height:380px;"></div>
+          <p class="text-[11px] text-[#98A2B3] mt-2">Peta hanya menampilkan tag lokasi yang direkomendasikan pada rute terakhir, supaya jalurnya terlihat jelas.</p>
+        </div>
+        <div class="card p-4">
+          <div class="font-bold text-[#101828] mb-3">Smart Routing</div>
+          <label class="text-xs text-[#667085]">Titik awal</label>
+          <input type="text" id="routeStartLabel" value="KC S Parman (Area Bengkulu)" disabled class="mb-1 opacity-70">
+          <p id="routeGpsHint" class="text-[10px] text-[#98A2B3] mb-3">Aktifkan "Ikuti Lokasi Saya" pada Field Radar agar titik awal memakai GPS perangkat secara live.</p>
+          <label class="text-xs text-[#667085]">Titik tujuan akhir</label>
+          <div class="relative">
+            <input type="text" id="destSearchInput" placeholder="Cari nama / alamat lokasi tujuan..." autocomplete="off" class="mb-1" />
+            <div id="destSearchResults" class="hidden absolute z-10 bg-white border border-[#E3E6EE] rounded-lg shadow w-full max-h-56 overflow-y-auto"></div>
+          </div>
+          <input type="hidden" id="destSelectedId" />
+          <p id="destSelectedLabel" class="text-[11px] text-[#98A2B3] mb-3">Belum ada tujuan dipilih.</p>
+          <button id="smartRouteBtn" class="w-full bg-[var(--navy)] text-white text-sm font-semibold py-2.5 rounded-lg mb-3">Cari Rute Optimal</button>
+          <div id="routeResult" class="text-sm text-[#475467] flex flex-col gap-2"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ODS ================= -->
+  <section id="page-ods" class="hidden">
+    <h1 class="text-xl font-bold text-[#101828] mb-1">Outbranch Delivery System</h1>
+    <p class="text-sm text-[#667085] mb-5">Dashboard pembukaan rekening tabungan terintegrasi dengan BDS.</p>
+
+    <div class="flex items-center gap-2 mb-6" id="odsSteps">
+      <div class="step-dot active w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" data-step="1">1</div>
+      <div class="flex-1 h-[2px] bg-[#E5E7EB]"></div>
+      <div class="step-dot w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" data-step="2">2</div>
+    </div>
+
+    <!-- Step 1: Produk 3P + i (Payroll, Pebisnis, Prioritas, Individu) + Tabungan Pelajar -->
+    <div class="ods-step card p-6" data-step="1">
+      <div class="font-bold text-[#101828] mb-4">1. Pilih Produk</div>
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-4" id="productCards">
+        <button class="prod-card border-2 border-[#E3E6EE] rounded-xl p-4 text-left" data-prod="Tabungan Pelajar">
+          <i data-lucide="graduation-cap" class="w-5 h-5 text-[var(--navy)] mb-2"></i>
+          <div class="font-semibold text-[#101828] text-sm">Tabungan Pelajar</div>
+          <div class="text-xs text-[#667085] mt-1">Untuk siswa/siswi sekolah</div>
+        </button>
+        <button class="prod-card border-2 border-[#E3E6EE] rounded-xl p-4 text-left" data-prod="Payroll">
+          <i data-lucide="banknote" class="w-5 h-5 text-[var(--navy)] mb-2"></i>
+          <div class="font-semibold text-[#101828] text-sm">Payroll</div>
+          <div class="text-xs text-[#667085] mt-1">Gaji karyawan perusahaan</div>
+        </button>
+        <button class="prod-card border-2 border-[#E3E6EE] rounded-xl p-4 text-left" data-prod="Pebisnis">
+          <i data-lucide="briefcase" class="w-5 h-5 text-[var(--navy)] mb-2"></i>
+          <div class="font-semibold text-[#101828] text-sm">Pebisnis</div>
+          <div class="text-xs text-[#667085] mt-1">Pelaku usaha / UMKM</div>
+        </button>
+        <button class="prod-card border-2 border-[#E3E6EE] rounded-xl p-4 text-left" data-prod="Prioritas">
+          <i data-lucide="crown" class="w-5 h-5 text-[var(--navy)] mb-2"></i>
+          <div class="font-semibold text-[#101828] text-sm">Prioritas</div>
+          <div class="text-xs text-[#667085] mt-1">Nasabah prioritas</div>
+        </button>
+        <button class="prod-card border-2 border-[#E3E6EE] rounded-xl p-4 text-left" data-prod="Individu">
+          <i data-lucide="user" class="w-5 h-5 text-[var(--navy)] mb-2"></i>
+          <div class="font-semibold text-[#101828] text-sm">Individu</div>
+          <div class="text-xs text-[#667085] mt-1">Nasabah perorangan</div>
+        </button>
+      </div>
+      <p id="prodError" class="hidden text-xs text-[#DC2626] mt-3">Pilih salah satu produk terlebih dahulu.</p>
+      <div class="flex justify-end mt-4"><button class="ods-next bg-[var(--navy)] text-white text-sm font-semibold px-5 py-2.5 rounded-lg">Lanjut</button></div>
+    </div>
+
+    <!-- Step 2: Entry data (field & dokumen dibangun dinamis sesuai produk oleh js/ods.js) -->
+    <div class="ods-step card p-6 hidden" data-step="2">
+      <div class="font-bold text-[#101828] mb-1">2. Entry Data Nasabah</div>
+      <p class="text-xs text-[#98A2B3] mb-4">Kolom & dokumen menyesuaikan produk yang dipilih. Semua kolom wajib diisi.</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="ndFieldsGrid">
+        <!-- diisi oleh ods.js sesuai produk -->
+      </div>
+
+      <p id="dataError" class="hidden text-xs text-[#DC2626] mt-3">Lengkapi semua kolom wajib sebelum menyelesaikan pengajuan.</p>
+      <div class="flex justify-between mt-6">
+        <button class="ods-back border border-[#E3E6EE] text-[#475467] text-sm font-semibold px-5 py-2.5 rounded-lg">Kembali</button>
+        <button id="odsFinishBtn" class="bg-[var(--navy)] text-white text-sm font-semibold px-5 py-2.5 rounded-lg">Selesai</button>
+      </div>
+    </div>
+
+    <!-- Riwayat pengajuan + export -->
+    <div class="card p-5 mt-6">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <div class="font-bold text-[#101828]">Riwayat Pengajuan ODS</div>
+        <button id="odsExportBtn" class="text-xs font-semibold bg-[#16A34A] text-white px-3 py-2 rounded-lg flex items-center gap-1.5">
+          <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> Export ke Excel
+        </button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm" id="odsHistoryTable">
+          <thead><tr class="text-left text-[#8A93A6] text-xs uppercase">
+            <th class="py-2 px-2">Session ID</th><th class="py-2 px-2">Produk</th><th class="py-2 px-2">Nama</th>
+            <th class="py-2 px-2">NIK</th><th class="py-2 px-2">Telepon</th><th class="py-2 px-2">Waktu</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+        <p id="odsHistoryEmpty" class="text-xs text-[#98A2B3] py-3">Belum ada pengajuan tersimpan.</p>
+      </div>
+      <p class="text-[11px] text-[#98A2B3] mt-2">Export Excel menyertakan seluruh data nasabah beserta tautan gambar dokumen (tersimpan di Supabase Storage, folder "ods-documents").</p>
+    </div>
+  </section>
+
+  <!-- ================= DATABASE UMKM ================= -->
+  <section id="page-umkm" class="hidden">
+    <div class="flex items-start justify-between flex-wrap gap-3 mb-4">
+      <div>
+        <h1 class="text-xl font-bold text-[#101828] mb-1 flex items-center gap-2"><i data-lucide="store" class="w-5 h-5 text-[#0D9488]"></i>Database UMKM</h1>
+        <p class="text-sm text-[#667085]">Data UMKM Kecamatan Ratu Agung, Kota Bengkulu. <b>Top Down</b> = data otomatis (import), <b>Bottom Up</b> = diinput manual di lapangan. Tampil juga sebagai ikon UMKM di peta Field Radar.</p>
+      </div>
+      <div class="flex gap-2">
+        <button id="umExportBtn" class="text-xs font-semibold bg-[#16A34A] text-white px-3 py-2 rounded-lg flex items-center gap-1.5"><i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> Export Excel</button>
+        <button id="umAddBtn" class="text-xs font-semibold bg-[var(--navy)] text-white px-3 py-2 rounded-lg flex items-center gap-1.5"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Tambah UMKM</button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" id="umStats"></div>
+
+    <div class="card p-4">
+      <div class="flex flex-wrap gap-2 mb-3">
+        <input type="text" id="umSearch" placeholder="Cari nama usaha / pemilik / alamat..." class="!w-64" />
+        <select id="umFilterJenis" class="!w-auto"><option value="">Semua jenis usaha</option></select>
+        <select id="umFilterStatus" class="!w-auto">
+          <option value="">Semua status</option><option value="belum">Belum</option><option value="proses">Proses</option><option value="sudah">Sudah</option>
+        </select>
+        <select id="umFilterSource" class="!w-auto">
+          <option value="">Semua sumber</option><option value="topdown">Top Down</option><option value="manual">Bottom Up</option>
+        </select>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm" id="umTable">
+          <thead><tr class="text-left text-[#8A93A6] text-xs uppercase whitespace-nowrap">
+            <th class="py-2 px-2">Usaha</th><th class="py-2 px-2">Jenis</th><th class="py-2 px-2">Kontak</th><th class="py-2 px-2">Omzet/bln</th>
+            <th class="py-2 px-2">Sumber</th><th class="py-2 px-2">Status</th><th class="py-2 px-2">Kunjungan</th><th class="py-2 px-2">PIC Objek</th><th class="py-2 px-2">Foto</th><th class="py-2 px-2">Aksi</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+        <p id="umEmpty" class="text-xs text-[#98A2B3] py-3 hidden">Belum ada data UMKM. Klik "Tambah UMKM", atau import dari masterdata (type <code>umkm</code>).</p>
+      </div>
+      <div class="flex items-center justify-between mt-3 text-xs text-[#667085]">
+        <span id="umCount"></span>
+        <div class="flex gap-2">
+          <button id="umPrev" class="border border-[#E3E6EE] rounded-lg px-3 py-1.5">Sebelumnya</button>
+          <button id="umNext" class="border border-[#E3E6EE] rounded-lg px-3 py-1.5">Berikutnya</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  </main>
+</div>
+</div><!-- /#appShell -->
+
+<!-- ================= MODAL: DATA KUNJUNGAN (semua objek) ================= -->
+<div id="kjModal" class="hidden fixed inset-0 z-[2000] bg-black/40 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl w-full max-w-md max-h-[92vh] overflow-y-auto p-6">
+    <div class="flex items-start justify-between mb-4">
+      <div>
+        <div class="font-bold text-[#101828]">Data Kunjungan</div>
+        <div id="kjSub" class="text-xs text-[#667085] mt-0.5"></div>
+      </div>
+      <button id="kjClose" type="button" class="text-[#98A2B3] hover:text-[#101828]"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div class="flex flex-col gap-3 text-sm">
+      <div><label class="text-xs text-[#667085]">PIC / pegawai yang berkunjung *</label><input type="text" id="kjPicKunjungan" placeholder="Nama pegawai" /></div>
+      <div><label class="text-xs text-[#667085]">Tanggal kunjungan *</label><input type="date" id="kjTgl" /></div>
+      <div class="grid grid-cols-2 gap-2">
+        <div><label class="text-xs text-[#667085]">PIC objek</label><input type="text" id="kjPicObjek" placeholder="Nama PIC di lokasi" /></div>
+        <div><label class="text-xs text-[#667085]">Kontak PIC objek</label><input type="tel" id="kjKontak" placeholder="No. HP / WA" /></div>
+      </div>
+      <div><label class="text-xs text-[#667085]">Status kunjungan</label>
+        <select id="kjStatus"><option value="belum">Belum</option><option value="proses">Proses</option><option value="sudah">Sudah</option></select>
+      </div>
+      <div>
+        <label class="text-xs text-[#667085]">Dokumentasi kunjungan (foto)</label>
+        <input type="file" id="kjFoto" accept="image/*" />
+        <img id="kjPreview" class="hidden mt-2 rounded-lg max-h-48 border border-[#E3E6EE]" alt="Pratinjau dokumentasi" />
+      </div>
+      <p id="kjError" class="hidden text-xs text-[#DC2626]"></p>
+      <button id="kjSave" type="button" class="w-full bg-[var(--navy)] text-white text-sm font-semibold py-2.5 rounded-lg">Simpan Data Kunjungan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: TAMBAH / EDIT UMKM ================= -->
+<div id="umModal" class="hidden fixed inset-0 z-[2000] bg-black/40 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto p-6">
+    <div class="flex items-start justify-between mb-4">
+      <div>
+        <div id="umModalTitle" class="font-bold text-[#101828]">Tambah UMKM</div>
+        <div id="umModalSub" class="text-xs text-[#667085] mt-0.5"></div>
+      </div>
+      <button id="umClose" type="button" class="text-[#98A2B3] hover:text-[#101828]"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+      <div class="md:col-span-2"><label class="text-xs text-[#667085]">Nama usaha *</label><input type="text" id="umNama" /></div>
+      <div><label class="text-xs text-[#667085]">Nama pemilik</label><input type="text" id="umPemilik" /></div>
+      <div><label class="text-xs text-[#667085]">Jenis usaha</label>
+        <input type="text" id="umJenis" list="umJenisList" placeholder="mis. Kuliner" />
+        <datalist id="umJenisList"><option value="Kuliner"><option value="Toko Kelontong / Retail"><option value="Fashion"><option value="Jasa"><option value="Kesehatan & Kecantikan"><option value="Pendidikan"><option value="Otomotif"><option value="Pertanian / Perkebunan"><option value="Lainnya"></datalist>
+      </div>
+      <div><label class="text-xs text-[#667085]">Nomor telepon</label><input type="tel" id="umTelp" /></div>
+      <div><label class="text-xs text-[#667085]">Estimasi omzet / bulan (Rp)</label><input type="number" id="umOmzet" min="0" /></div>
+      <div class="md:col-span-2"><label class="text-xs text-[#667085]">Alamat *</label><textarea id="umAlamat" rows="2"></textarea></div>
+      <div><label class="text-xs text-[#667085]">Latitude *</label><input type="text" id="umLat" /></div>
+      <div><label class="text-xs text-[#667085]">Longitude *</label><input type="text" id="umLng" /></div>
+      <button id="umUseGps" type="button" class="md:col-span-2 text-xs text-[var(--navy)] font-semibold text-left flex items-center gap-1"><i data-lucide="locate" class="w-3.5 h-3.5"></i>Gunakan lokasi GPS saat ini</button>
+      <div><label class="text-xs text-[#667085]">Status kunjungan</label>
+        <select id="umStatus"><option value="belum">Belum</option><option value="proses">Proses</option><option value="sudah">Sudah</option></select>
+      </div>
+      <div class="md:col-span-2"><label class="text-xs text-[#667085]">Catatan</label><textarea id="umCatatan" rows="2"></textarea></div>
+      <p id="umError" class="hidden md:col-span-2 text-xs text-[#DC2626]"></p>
+      <button id="umSave" type="button" class="md:col-span-2 bg-[var(--navy)] text-white text-sm font-semibold py-2.5 rounded-lg">Simpan</button>
+      <p class="md:col-span-2 text-[11px] text-[#98A2B3]">Data yang ditambahkan di sini berstatus <b>Bottom Up</b>. Data kunjungan (PIC, tanggal, kontak, foto) diisi lewat tombol "Kunjungan" di tabel.</p>
+    </div>
+  </div>
+</div>
+
+<script src="js/supabase-client.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/common.js"></script>
+<script src="js/fos-field-radar.js"></script>
+<script src="js/fos-route.js"></script>
+<script src="js/kunjungan.js"></script>
+<script src="js/umkm.js"></script>
+<script src="js/ods.js"></script>
+</body>
+</html>

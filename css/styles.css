@@ -1,0 +1,45 @@
+:root{
+  --navy:#0B1B45; --navy-deep:#071230; --gold-from:#FCC94A; --gold-to:#F5941E; --bg:#F2F4F9;
+  --status-belum:#DC2626; --status-proses:#F5941E; --status-sudah:#16A34A;
+}
+*{font-family: Inter, ui-sans-serif, system-ui, sans-serif;}
+body{background:var(--bg);}
+.sidebar-item.active{background:rgba(255,255,255,0.12); color:#fff; font-weight:600;}
+.sidebar-item{color:#B7BEDB;}
+.card{background:#fff; border-radius:14px; box-shadow:0 1px 2px rgba(15,23,42,0.06);}
+.pill{font-size:12px; font-weight:600; padding:4px 12px; border-radius:999px;}
+.subtab.active{color:var(--navy); border-bottom:2px solid var(--gold-to);}
+.subtab{color:#8A93A6; border-bottom:2px solid transparent;}
+.leaflet-container{border-radius:12px;}
+.step-dot.active{background:var(--navy); color:#fff;}
+.step-dot{background:#E5E7EB; color:#667085;}
+input[type=text], input[type=date], input[type=tel], input[type=number], select, textarea{
+  border:1px solid #E3E6EE; border-radius:10px; padding:9px 12px; font-size:13.5px; width:100%; background:#fff; color:#344054;
+}
+input[type=file]{font-size:13px;}
+input.field-invalid, textarea.field-invalid, select.field-invalid{border-color:#DC2626; background:#FEF2F2;}
+::-webkit-scrollbar{width:8px; height:8px;}
+::-webkit-scrollbar-thumb{background:#D0D5DD; border-radius:8px;}
+
+/* ---- status legend / icons ---- */
+.status-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;}
+.status-belum{background:var(--status-belum);}
+.status-proses{background:var(--status-proses);}
+.status-sudah{background:var(--status-sudah);}
+
+/* ---- GPS "my location" marker ---- */
+.gps-dot{width:16px;height:16px;border-radius:50%;background:#1D4ED8;border:3px solid #fff;box-shadow:0 0 0 2px #1D4ED8;position:relative;}
+.gps-dot::after{content:'';position:absolute;inset:-8px;border-radius:50%;background:rgba(29,78,216,0.25);animation:gpsPulse 1.8s infinite;}
+@keyframes gpsPulse{0%{transform:scale(0.4);opacity:0.9;}100%{transform:scale(1.8);opacity:0;}}
+
+/* ---- manual add / search panels ---- */
+.mini-tab.active{background:var(--navy); color:#fff;}
+.mini-tab{background:#F2F4F9; color:#475467;}
+
+/* ---- camera overlay guide ---- */
+.cam-overlay-frame{position:absolute; inset:0; pointer-events:none; display:flex; align-items:center; justify-content:center;}
+.cam-overlay-frame img{max-width:88%; max-height:88%; opacity:0.9;}
+
+/* ---- login screen ---- */
+#loginScreen input[type=text], #loginScreen input[type=password]{margin-top:2px;}
+#fieldhubBg{overflow:hidden;}
