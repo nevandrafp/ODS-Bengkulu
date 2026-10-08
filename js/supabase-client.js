@@ -15,8 +15,8 @@
       semua browser & perangkat.
    ========================================================================= */
 
-const SUPABASE_URL = 'https://cienblzcibkwsqivlowf.supabase.co'; // <- ganti dengan Project URL Anda
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNpZW5ibHpjaWJrd3NxaXZsb3dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyMjk3MzIsImV4cCI6MjEwMzgwNTczMn0.gyxpYTqr_kgejz5fxQ6H8KddtyMX69CvkY7qM4rYbFI';             // <- ganti dengan anon public key Anda
+const SUPABASE_URL = 'https://dxdcvrbkggjskvwwfanx.supabase.co'; // <- ganti dengan Project URL Anda
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4ZGN2cmJrZ2dqc2t2d3dmYW54Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0MDkyMzIsImV4cCI6MjEwNjk4NTIzMn0.y8jv9jUCBVeWVKWC4MjP1Eg3T2eMNTQUDwdNPXS3Gzk';             // <- ganti dengan anon public key Anda
 
 const supabaseConfigured = !SUPABASE_URL.includes('YOUR-PROJECT-REF') && !SUPABASE_ANON_KEY.includes('YOUR-ANON-PUBLIC-KEY');
 
